@@ -18,7 +18,7 @@
 <body>
     <aside class="sidebar">
         <div class="sidebar-header">
-            <img src="logo.jpeg" alt="Logo" onerror="this.src='https://ui-avatars.com/api/?name=HIS'">
+            <img src="https://ui-avatars.com/api/?name=HIS&background=667eea&color=fff" alt="HIS">
             <h1>HIS</h1>
         </div>
         <nav>

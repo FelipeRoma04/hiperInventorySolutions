@@ -226,7 +226,7 @@
 </head>
 <body>
     <div class="login-card">
-        <img class="logo" src="./logo.jpeg" alt="Logo" onerror="this.src='https://ui-avatars.com/api/?name=HIS&background=667eea&color=fff'">
+        <img class="logo" src="https://ui-avatars.com/api/?name=HIS&background=667eea&color=fff" alt="HIS">
         <div class="title">hiperInventorySolutions</div>
         <div class="subtitle">Sistema de Gestión de Activos</div>
 
