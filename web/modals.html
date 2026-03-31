@@ -1,0 +1,88 @@
+<!-- MODAL: EDITAR PERFIL -->
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Mi Perfil</h2>
+            <button class="modal-close" onclick="closeModal('profileModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <form>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto;">A</div>
+                    <button type="button" class="btn btn-primary btn-small" style="margin-top: 10px;">
+                        <i class="fas fa-camera"></i> Cambiar Foto
+                    </button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" value="Admin Usuario">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" value="admin@globaninventory.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" value="+34 612 345 678">
+                </div>
+                
+                <div class="form-group">
+                    <label>Departamento</label>
+                    <select>
+                        <option>IT</option>
+                        <option>Administración</option>
+                        <option>Finanzas</option>
+                        <option>Recursos Humanos</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('profileModal')">Cancelar</button>
+            <button class="btn btn-primary" onclick="alert('Perfil actualizado'); closeModal('profileModal')">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CAMBIAR CONTRASEÑA -->
+<div id="changePasswordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Cambiar Contraseña</h2>
+            <button class="modal-close" onclick="closeModal('changePasswordModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <form>
+                <div class="form-group">
+                    <label>Contraseña Actual</label>
+                    <input type="password" placeholder="Ingresa tu contraseña actual">
+                </div>
+                
+                <div class="form-group">
+                    <label>Nueva Contraseña</label>
+                    <input type="password" placeholder="Ingresa tu nueva contraseña" onkeyup="updatePasswordStrength(this.value)">
+                    <div style="height: 4px; background: #e0e0e0; border-radius: 2px; margin-top: 8px; overflow: hidden;">
+                        <div class="password-strength" style="height: 100%; width: 0%; background: #f44336; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-size: 12px; color: #999; margin-top: 8px;">
+                        ✓ Mínimo 8 caracteres<br>
+                        ✓ Mayúscula y minúscula<br>
+                        ✓ Número
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Confirmar Nueva Contraseña</label>
+                    <input type="password" placeholder="Confirma tu nueva contraseña">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('changePasswordModal')">Cancelar</button>
+            <button class="btn btn-primary" onclick="alert('Contraseña actualizada'); closeModal('changePasswordModal')">Actualizar</button>
+        </div>
+    </div>
+</div>
