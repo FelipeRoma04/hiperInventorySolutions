@@ -4,164 +4,102 @@ import com.hiper.inventory.models.Maintenance;
 import com.hiper.inventory.utils.DatabaseUtil;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DAO para manejo de mantenimientos preventivos
- */
 public class MaintenanceDAO {
-    
-    private Connection conn;
-    
-    public MaintenanceDAO() throws SQLException {
-        this.conn = DatabaseUtil.getConnection();
-    }
-    
-    // Crear tabla si no existe
-    public static void createTable() throws SQLException {
-        Connection conn = DatabaseUtil.getConnection();
-        String sql = "CREATE TABLE IF NOT EXISTS maintenance (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "asset_id INTEGER NOT NULL," +
-                "type TEXT NOT NULL," +
-                "description TEXT," +
-                "scheduled_date DATE NOT NULL," +
-                "completed_date DATE," +
-                "status TEXT DEFAULT 'Pendiente'," +
-                "technician TEXT," +
-                "notes TEXT," +
-                "cost REAL DEFAULT 0," +
-                "priority TEXT DEFAULT 'Media'," +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                "updated_at TIMESTAMP," +
-                "FOREIGN KEY(asset_id) REFERENCES assets(id)" +
-                ")";
-        Statement stmt = conn.createStatement();
-        stmt.execute(sql);
-        stmt.close();
-    }
-    
-    // Crear mantenimiento
-    public int create(Maintenance maintenance) throws SQLException {
-        String sql = "INSERT INTO maintenance (asset_id, type, description, scheduled_date, status, priority, notes, cost, technician) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        pstmt.setInt(1, maintenance.getAssetId());
-        pstmt.setString(2, maintenance.getType());
-        pstmt.setString(3, maintenance.getDescription());
-        pstmt.setDate(4, Date.valueOf(maintenance.getScheduledDate()));
-        pstmt.setString(5, maintenance.getStatus());
-        pstmt.setString(6, maintenance.getPriority());
-        pstmt.setString(7, maintenance.getNotes());
-        pstmt.setDouble(8, maintenance.getCost());
-        pstmt.setString(9, maintenance.getTechnician());
-        
-        pstmt.executeUpdate();
-        ResultSet rs = pstmt.getGeneratedKeys();
-        int id = 0;
-        if (rs.next()) {
-            id = rs.getInt(1);
+
+    public MaintenanceDAO() throws SQLException {}
+
+    // No-op: table already created via SQL Server schema
+    public static void createTable() throws SQLException {}
+
+    public int create(Maintenance m) throws SQLException {
+        String sql = "INSERT INTO maintenance (asset_id,type,description,scheduled_date,status,priority,notes,cost,technician) VALUES (?,?,?,?,?,?,?,?,?)";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, m.getAssetId());
+            ps.setString(2, m.getType());
+            ps.setString(3, m.getDescription());
+            ps.setDate(4, Date.valueOf(m.getScheduledDate()));
+            ps.setString(5, m.getStatus());
+            ps.setString(6, m.getPriority());
+            ps.setString(7, m.getNotes());
+            ps.setDouble(8, m.getCost());
+            ps.setString(9, m.getTechnician());
+            ps.executeUpdate();
+            ResultSet keys = ps.getGeneratedKeys();
+            return keys.next() ? keys.getInt(1) : 0;
         }
-        rs.close();
-        pstmt.close();
-        return id;
     }
-    
-    // Obtener por ID
+
     public Maintenance getById(int id) throws SQLException {
-        String sql = "SELECT * FROM maintenance WHERE id = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, id);
-        ResultSet rs = pstmt.executeQuery();
-        
-        Maintenance m = null;
-        if (rs.next()) {
-            m = mapRow(rs);
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM maintenance WHERE id=?")) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            return rs.next() ? mapRow(rs) : null;
         }
-        rs.close();
-        pstmt.close();
-        return m;
     }
-    
-    // Obtener por activo
+
     public List<Maintenance> getByAssetId(int assetId) throws SQLException {
-        String sql = "SELECT * FROM maintenance WHERE asset_id = ? ORDER BY scheduled_date DESC";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, assetId);
-        ResultSet rs = pstmt.executeQuery();
-        
         List<Maintenance> list = new ArrayList<>();
-        while (rs.next()) {
-            list.add(mapRow(rs));
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM maintenance WHERE asset_id=? ORDER BY scheduled_date DESC")) {
+            ps.setInt(1, assetId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) list.add(mapRow(rs));
         }
-        rs.close();
-        pstmt.close();
         return list;
     }
-    
-    // Obtener pendientes (próximos 30 días)
+
     public List<Maintenance> getPending() throws SQLException {
-        String sql = "SELECT * FROM maintenance WHERE status = 'Pendiente' " +
-                "AND scheduled_date BETWEEN DATE('now') AND DATE('now', '+30 days') " +
-                "ORDER BY priority DESC, scheduled_date ASC";
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(sql);
-        
         List<Maintenance> list = new ArrayList<>();
-        while (rs.next()) {
-            list.add(mapRow(rs));
+        String sql = "SELECT * FROM maintenance WHERE status='Pendiente' AND scheduled_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day,30,CAST(GETDATE() AS DATE)) ORDER BY priority DESC, scheduled_date ASC";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(mapRow(rs));
         }
-        rs.close();
-        stmt.close();
         return list;
     }
-    
-    // Actualizar
-    public boolean update(Maintenance maintenance) throws SQLException {
-        String sql = "UPDATE maintenance SET type=?, description=?, scheduled_date=?, " +
-                "completed_date=?, status=?, technician=?, notes=?, cost=?, priority=?, updated_at=CURRENT_TIMESTAMP " +
-                "WHERE id=?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, maintenance.getType());
-        pstmt.setString(2, maintenance.getDescription());
-        pstmt.setDate(3, Date.valueOf(maintenance.getScheduledDate()));
-        pstmt.setDate(4, maintenance.getCompletedDate() != null ? Date.valueOf(maintenance.getCompletedDate()) : null);
-        pstmt.setString(5, maintenance.getStatus());
-        pstmt.setString(6, maintenance.getTechnician());
-        pstmt.setString(7, maintenance.getNotes());
-        pstmt.setDouble(8, maintenance.getCost());
-        pstmt.setString(9, maintenance.getPriority());
-        pstmt.setInt(10, maintenance.getId());
-        
-        int rows = pstmt.executeUpdate();
-        pstmt.close();
-        return rows > 0;
+
+    public boolean update(Maintenance m) throws SQLException {
+        String sql = "UPDATE maintenance SET type=?,description=?,scheduled_date=?,completed_date=?,status=?,technician=?,notes=?,cost=?,priority=?,updated_at=GETDATE() WHERE id=?";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, m.getType());
+            ps.setString(2, m.getDescription());
+            ps.setDate(3, Date.valueOf(m.getScheduledDate()));
+            ps.setDate(4, m.getCompletedDate() != null ? Date.valueOf(m.getCompletedDate()) : null);
+            ps.setString(5, m.getStatus());
+            ps.setString(6, m.getTechnician());
+            ps.setString(7, m.getNotes());
+            ps.setDouble(8, m.getCost());
+            ps.setString(9, m.getPriority());
+            ps.setInt(10, m.getId());
+            return ps.executeUpdate() > 0;
+        }
     }
-    
-    // Eliminar
+
     public boolean delete(int id) throws SQLException {
-        String sql = "DELETE FROM maintenance WHERE id=?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, id);
-        int rows = pstmt.executeUpdate();
-        pstmt.close();
-        return rows > 0;
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM maintenance WHERE id=?")) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        }
     }
-    
-    // Mapear ResultSet a objeto
+
     private Maintenance mapRow(ResultSet rs) throws SQLException {
         Maintenance m = new Maintenance();
         m.setId(rs.getInt("id"));
         m.setAssetId(rs.getInt("asset_id"));
         m.setType(rs.getString("type"));
         m.setDescription(rs.getString("description"));
-        m.setScheduledDate(rs.getDate("scheduled_date").toLocalDate());
-        Date completedDate = rs.getDate("completed_date");
-        if (completedDate != null) {
-            m.setCompletedDate(completedDate.toLocalDate());
-        }
+        Date sd = rs.getDate("scheduled_date");
+        if (sd != null) m.setScheduledDate(sd.toLocalDate());
+        Date cd = rs.getDate("completed_date");
+        if (cd != null) m.setCompletedDate(cd.toLocalDate());
         m.setStatus(rs.getString("status"));
         m.setTechnician(rs.getString("technician"));
         m.setNotes(rs.getString("notes"));

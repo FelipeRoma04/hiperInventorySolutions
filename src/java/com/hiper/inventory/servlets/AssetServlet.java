@@ -165,6 +165,10 @@ public class AssetServlet extends HttpServlet {
                        request.getParameter("estado") : "Operativo");
         asset.setUbicacion(request.getParameter("ubicacion"));
         asset.setSede(request.getParameter("sede"));
+        asset.setDescripcion(request.getParameter("descripcion"));
+        asset.setResponsable(request.getParameter("responsable"));
+        if (request.getParameter("imagenBase64") != null && !request.getParameter("imagenBase64").isEmpty())
+            asset.setImagenUrl(request.getParameter("imagenBase64"));
         
         try {
             asset.setValor(Double.parseDouble(request.getParameter("valor")));
@@ -208,8 +212,22 @@ public class AssetServlet extends HttpServlet {
         
         // Actualizar campos
         if (request.getParameter("nombre") != null) asset.setNombre(request.getParameter("nombre"));
+        if (request.getParameter("codigo") != null) asset.setCodigo(request.getParameter("codigo"));
+        if (request.getParameter("categoria") != null) asset.setCategoria(request.getParameter("categoria"));
         if (request.getParameter("estado") != null) asset.setEstado(request.getParameter("estado"));
         if (request.getParameter("ubicacion") != null) asset.setUbicacion(request.getParameter("ubicacion"));
+        if (request.getParameter("sede") != null) asset.setSede(request.getParameter("sede"));
+        if (request.getParameter("responsable") != null) asset.setResponsable(request.getParameter("responsable"));
+        if (request.getParameter("descripcion") != null) asset.setDescripcion(request.getParameter("descripcion"));
+        if (request.getParameter("asignadoA") != null) asset.setAsignadoA(request.getParameter("asignadoA"));
+        if (request.getParameter("notas") != null) asset.setNotas(request.getParameter("notas"));
+        if (request.getParameter("imagenBase64") != null && !request.getParameter("imagenBase64").isEmpty())
+            asset.setImagenUrl(request.getParameter("imagenBase64"));
+        try {
+            if (request.getParameter("valor") != null) asset.setValor(Double.parseDouble(request.getParameter("valor")));
+            if (request.getParameter("cantidad") != null) asset.setCantidad(Integer.parseInt(request.getParameter("cantidad")));
+            if (request.getParameter("stockMinimo") != null) asset.setStockMinimo(Integer.parseInt(request.getParameter("stockMinimo")));
+        } catch (NumberFormatException ignored) {}
         
         if (assetDAO.updateAsset(asset)) {
             int userId = (Integer) session.getAttribute("userId");

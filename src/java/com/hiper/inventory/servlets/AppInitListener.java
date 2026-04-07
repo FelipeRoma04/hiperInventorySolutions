@@ -22,6 +22,10 @@ public class AppInitListener implements ServletContextListener {
             // Inicializar base de datos
             DatabaseUtil.initializeDatabase();
             
+            // Inicializar tablas adicionales
+            try { com.hiper.inventory.dao.MaintenanceDAO.createTable(); } catch (Exception ignored) {}
+            try { com.hiper.inventory.dao.DepreciationDAO.createTable(); } catch (Exception ignored) {}
+            
             System.out.println("✅ Base de datos inicializada correctamente");
             System.out.println("✅ Servlets registrados:");
             System.out.println("   - /api/auth/login    [POST]");

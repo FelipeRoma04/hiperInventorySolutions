@@ -36,11 +36,9 @@ public class AssetDAO {
     public List<Asset> getAllAssets() {
         List<Asset> assets = new ArrayList<>();
         String sql = "SELECT * FROM assets ORDER BY nombre";
-        
         try (Connection conn = DatabaseUtil.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
                 assets.add(mapResultSetToAsset(rs));
             }
@@ -221,12 +219,12 @@ public class AssetDAO {
             rs.next();
             stats.put("total", rs.getInt(1));
             
-            // Por estado
+            // Por estado - acepta con y sin tilde
             rs = stmt.executeQuery("SELECT COUNT(*) FROM assets WHERE estado = 'Operativo'");
             rs.next();
             stats.put("operativo", rs.getInt(1));
             
-            rs = stmt.executeQuery("SELECT COUNT(*) FROM assets WHERE estado = 'En reparación'");
+            rs = stmt.executeQuery("SELECT COUNT(*) FROM assets WHERE estado IN ('En reparación','En reparacion')");
             rs.next();
             stats.put("reparacion", rs.getInt(1));
             
@@ -234,7 +232,7 @@ public class AssetDAO {
             rs.next();
             stats.put("baja", rs.getInt(1));
             
-            rs = stmt.executeQuery("SELECT COUNT(*) FROM assets WHERE estado = 'En préstamo'");
+            rs = stmt.executeQuery("SELECT COUNT(*) FROM assets WHERE estado IN ('En préstamo','En prestamo')");
             rs.next();
             stats.put("prestamo", rs.getInt(1));
             
