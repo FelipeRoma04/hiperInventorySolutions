@@ -9,12 +9,13 @@ import java.sql.*;
 public class DatabaseUtil {
 
     // SQL Server connection — Windows Authentication
-    // SQL Server via Named Pipe — Windows Auth, local SQLEXPRESS instance
+    // SQL Server WFTDFRTDB — TCP port 50316, SQL Server Authentication
     private static final String DB_URL =
-        "jdbc:sqlserver://localhost;databaseName=hiperInventorySolutions;" +
-        "integratedSecurity=true;encrypt=false;trustServerCertificate=true;" +
-        "loginTimeout=15;namedPipe=true;" +
-        "serverName=localhost\\SQLEXPRESS;";
+        "jdbc:sqlserver://DESKTOP-JLJER4R:50316;" +
+        "databaseName=hiperInventorySolutions;" +
+        "user=hiperapp;password=HiperApp2024!;" +
+        "encrypt=false;trustServerCertificate=true;" +
+        "loginTimeout=15;";
 
     /**
      * Abre una nueva conexión a SQL Server por cada llamada.
