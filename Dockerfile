@@ -20,7 +20,7 @@ COPY . .
 RUN ant -f build.xml clean default
 
 # --- Stage 2: Runtime Stage ---
-FROM tomcat:9.0-jdk11-temurin
+FROM tomcat:9.0-jre11-slim
 
 LABEL maintainer="HiperInventory Solutions"
 LABEL description="Sistema de Gestión de Inventario - Tomcat 9 + JDK 11"
