@@ -8,7 +8,7 @@
     <property name="build.dir" value="build-docker-temp"/>
     <property name="build.classes.dir" value="${build.dir}/WEB-INF/classes"/>
     <property name="dist.dir" value="dist"/>
-    <property name="war.name" value="hiperInventorySolutions.war"/>
+    <property name="war.name" value="ROOT.war"/>
     
     <!-- Classpath -->
     <path id="compile.classpath">

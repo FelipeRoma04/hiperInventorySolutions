@@ -44,8 +44,9 @@ RUN apt-get update && \
 WORKDIR $CATALINA_HOME
 
 # Copy the built WAR from the builder stage
-COPY --from=builder /build/dist/hiperInventorySolutions.war \
-     $CATALINA_HOME/webapps/hiperInventorySolutions.war
+COPY --from=builder /build/dist/ROOT.war \
+     $CATALINA_HOME/webapps/ROOT.war
+
 
 # Copy Tomcat server configuration
 COPY docker/server.xml $CATALINA_HOME/conf/server.xml
@@ -62,6 +63,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -sf http://localhost:8080/hiperInventorySolutions/index.jsp || exit 1
+    CMD curl -sf http://localhost:8080/index.jsp || exit 1
+
 
 CMD ["catalina.sh", "run"]
