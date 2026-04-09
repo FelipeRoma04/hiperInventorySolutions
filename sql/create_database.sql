@@ -1,6 +1,6 @@
 -- ============================================================
 -- HiperInventory Solutions - SQL Server Schema
--- Instance: .\SQLEXPRESS  |  Auth: Windows
+-- Compatible: SQL Server 2019/2022 (Docker) & SQL Server 2012+
 -- ============================================================
 
 USE master;

@@ -1,0 +1,8 @@
+build/
+.git/
+.kiro/
+nbproject/private/
+hiperInventory.db
+*.md
+docs/
+sources.txt

@@ -3,19 +3,34 @@ package com.hiper.inventory.utils;
 import java.sql.*;
 
 /**
- * Utilidad para manejar conexiones a SQL Server
- * Instancia: .\SQLEXPRESS  |  Autenticación: Windows Integrated
+ * Utilidad para manejar conexiones a SQL Server.
+ * Configuración via variables de entorno para soporte Docker.
+ *
+ * Variables de entorno:
+ *   DB_HOST     - hostname del servidor SQL (default: sqlserver)
+ *   DB_PORT     - puerto TCP (default: 1433)
+ *   DB_NAME     - nombre de la base de datos (default: hiperInventorySolutions)
+ *   DB_USER     - usuario SQL (default: sa)
+ *   DB_PASSWORD - contraseña SQL (default: HiperApp2024!)
  */
 public class DatabaseUtil {
 
-    // SQL Server connection — Windows Authentication
-    // SQL Server WFTDFRTDB — TCP port 50316, SQL Server Authentication
-    private static final String DB_URL =
-        "jdbc:sqlserver://DESKTOP-JLJER4R:50316;" +
-        "databaseName=hiperInventorySolutions;" +
-        "user=hiperapp;password=HiperApp2024!;" +
-        "encrypt=false;trustServerCertificate=true;" +
-        "loginTimeout=15;";
+    private static String buildUrl() {
+        String host     = getEnv("DB_HOST",     "sqlserver");
+        String port     = getEnv("DB_PORT",     "1433");
+        String dbName   = getEnv("DB_NAME",     "hiperInventorySolutions");
+        String user     = getEnv("DB_USER",     "sa");
+        String password = getEnv("DB_PASSWORD", "HiperApp2024!");
+        return "jdbc:sqlserver://" + host + ":" + port + ";" +
+               "databaseName=" + dbName + ";" +
+               "user=" + user + ";password=" + password + ";" +
+               "encrypt=false;trustServerCertificate=true;loginTimeout=30;";
+    }
+
+    private static String getEnv(String key, String defaultValue) {
+        String val = System.getenv(key);
+        return (val != null && !val.isEmpty()) ? val : defaultValue;
+    }
 
     /**
      * Abre una nueva conexión a SQL Server por cada llamada.
@@ -24,7 +39,7 @@ public class DatabaseUtil {
     public static Connection getConnection() throws SQLException {
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            return DriverManager.getConnection(DB_URL);
+            return DriverManager.getConnection(buildUrl());
         } catch (ClassNotFoundException e) {
             throw new SQLException("Driver SQL Server no encontrado: " + e.getMessage());
         }
