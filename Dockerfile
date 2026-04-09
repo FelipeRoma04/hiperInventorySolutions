@@ -13,23 +13,16 @@ RUN apt-get update && \
 # Setup Build Environment
 WORKDIR /build
 
-# 1. Download Tomcat (needed for J2EE classpaths)
+# 1. Download Tomcat (needed for Java EE libraries)
 ENV TOMCAT_VERSION=9.0.117
 RUN curl -fL https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar -xzC /opt && \
     mv /opt/apache-tomcat-${TOMCAT_VERSION} /opt/tomcat
 
-# 2. Download NetBeans CopyLibs Task (essential for Ant headless builds)
-# We use a stable version from the official NetBeans repository/mirrors
-RUN mkdir -p /libs && \
-    curl -fL -o /libs/copylibs.jar https://repo.maven.apache.org/maven2/org/netbeans/external/org-netbeans-modules-java-j2seproject-copylibstask/RELEASE120/org-netbeans-modules-java-j2seproject-copylibstask-RELEASE120.jar
-
-# 3. Copy source code
+# 2. Copy source code
 COPY . .
 
-# 4. Build the project using Ant with required Headless properties
-RUN ant -f build.xml clean default \
-    -Dj2ee.server.home=/opt/tomcat \
-    -Dlibs.CopyLibs.classpath=/libs/copylibs.jar
+# 3. Build the project using our streamlined build-docker.xml
+RUN ant -f build-docker.xml dist -Dj2ee.server.home=/opt/tomcat
 
 
 # --- Stage 2: Runtime Stage ---

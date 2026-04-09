@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="hiperInventorySolutions-Docker" default="dist" basedir=".">
+    
+    <!-- Properties -->
+    <property name="src.dir" value="src/java"/>
+    <property name="web.dir" value="web"/>
+    <property name="lib.dir" value="web/WEB-INF/lib"/>
+    <property name="build.dir" value="build-docker-temp"/>
+    <property name="build.classes.dir" value="${build.dir}/WEB-INF/classes"/>
+    <property name="dist.dir" value="dist"/>
+    <property name="war.name" value="hiperInventorySolutions.war"/>
+    
+    <!-- Classpath -->
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}" includes="*.jar"/>
+        <fileset dir="${j2ee.server.home}/lib" includes="*.jar"/>
+    </path>
+
+    <!-- Targets -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="${build.classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${build.classes.dir}" 
+               includeantruntime="false" debug="true" source="11" target="11">
+            <classpath refid="compile.classpath"/>
+        </javac>
+    </target>
+
+    <target name="dist" depends="compile">
+        <!-- Copy web content to build dir -->
+        <copy todir="${build.dir}">
+            <fileset dir="${web.dir}"/>
+        </copy>
+        
+        <!-- Create WAR -->
+        <war destfile="${dist.dir}/${war.name}" webxml="${build.dir}/WEB-INF/web.xml">
+            <fileset dir="${build.dir}"/>
+        </war>
+        
+        <echo message="✅ WAR created successfully at ${dist.dir}/${war.name}"/>
+    </target>
+
+</project>
