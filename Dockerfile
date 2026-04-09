@@ -1,40 +1,48 @@
 # ============================================================
-# HiperInventory Solutions — Dockerfile (Multi-stage)
+# HiperInventory Solutions — Dockerfile (Robust Single-Pull)
 # ============================================================
 
-# --- Stage 1: Build Stage ---
-FROM openjdk:11-jdk-slim AS builder
+# We use Eclipse Temurin (official replacement for openjdk)
+# Using 'focal' (Ubuntu 20.04) for maximum stability on Railway
+FROM eclipse-temurin:11-jdk-focal AS builder
 
-# Install Ant
+# Install Ant and Curl for building and downloading dependencies
 RUN apt-get update && \
-    apt-get install -y ant && \
+    apt-get install -y ant curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-
-# Copy source code and libraries
 COPY . .
 
 # Build the project using Ant
-# Note: We use the 'default' target which typically builds the WAR in NetBeans projects
 RUN ant -f build.xml clean default
 
+
 # --- Stage 2: Runtime Stage ---
-FROM tomcat:9-jre11-slim
+# We use the EXACT same base image as Stage 1 to ensure standard Railway behavior
+FROM eclipse-temurin:11-jdk-focal
 
-LABEL maintainer="HiperInventory Solutions"
-LABEL description="Sistema de Gestión de Inventario - Tomcat 9 + JDK 11"
+# Tomcat Configuration
+ENV TOMCAT_VERSION=9.0.117
+ENV CATALINA_HOME=/opt/tomcat
+ENV PATH=$CATALINA_HOME/bin:$PATH
 
-# Remove default Tomcat apps to keep it clean
-RUN rm -rf /usr/local/tomcat/webapps/*
+# Install Curl and setup Tomcat
+RUN apt-get update && \
+    apt-get install -y curl && \
+    mkdir -p $CATALINA_HOME && \
+    curl -fL https://archive.apache.org/dist/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar -xzC $CATALINA_HOME --strip-components=1 && \
+    rm -rf $CATALINA_HOME/webapps/* && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR $CATALINA_HOME
 
 # Copy the built WAR from the builder stage
-# The path dist/hiperInventorySolutions.war is standard for NetBeans builds
 COPY --from=builder /build/dist/hiperInventorySolutions.war \
-     /usr/local/tomcat/webapps/hiperInventorySolutions.war
+     $CATALINA_HOME/webapps/hiperInventorySolutions.war
 
 # Copy Tomcat server configuration
-COPY docker/server.xml /usr/local/tomcat/conf/server.xml
+COPY docker/server.xml $CATALINA_HOME/conf/server.xml
 
 # Environment variables — can be overridden at runtime
 ENV DB_HOST=sqlserver \
@@ -46,7 +54,7 @@ ENV DB_HOST=sqlserver \
 
 EXPOSE 8080
 
-# Health check — ensures the app is actually responding
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -sf http://localhost:8080/hiperInventorySolutions/index.jsp || exit 1
 
