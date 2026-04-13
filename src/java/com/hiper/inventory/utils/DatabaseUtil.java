@@ -46,19 +46,45 @@ public class DatabaseUtil {
     }
 
     /**
-     * Inicializa la base de datos — en SQL Server las tablas ya existen,
-     * solo verificamos la conexión e insertamos datos iniciales si faltan.
+     * Inicializa la base de datos — crea el esquema si no está y puebla los datos iniciales.
      */
     public static void initializeDatabase() {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Verificar si ya hay datos
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users");
-            rs.next();
-            if (rs.getInt(1) == 0) {
+            boolean tablesExist = false;
+            try {
+                ResultSet rs = stmt.executeQuery("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='users'");
+                if (rs.next()) {
+                    tablesExist = true;
+                }
+            } catch (SQLException e) {
+                // Ignore
+            }
+
+            if (!tablesExist) {
+                System.out.println("🔧 Inicializando esquema de base de datos...");
+                
+                String[] tables = {
+                    "CREATE TABLE users (id INT IDENTITY(1,1) PRIMARY KEY, username NVARCHAR(100) UNIQUE NOT NULL, password NVARCHAR(255) NOT NULL, email NVARCHAR(255) UNIQUE NOT NULL, nombre NVARCHAR(200) NOT NULL, apellido NVARCHAR(200), rol NVARCHAR(50) NOT NULL, departamento NVARCHAR(200), telefono NVARCHAR(50), avatar NVARCHAR(500), sede NVARCHAR(200), activo BIT DEFAULT 1, fecha_registro DATETIME2 DEFAULT GETDATE(), ultimo_acceso DATETIME2)",
+                    "CREATE TABLE assets (id INT IDENTITY(1,1) PRIMARY KEY, nombre NVARCHAR(300) NOT NULL, codigo NVARCHAR(100) UNIQUE NOT NULL, descripcion NVARCHAR(MAX), categoria NVARCHAR(200) NOT NULL, estado NVARCHAR(100) NOT NULL, ubicacion NVARCHAR(300), sede NVARCHAR(200), valor FLOAT DEFAULT 0, stock_minimo INT DEFAULT 1, cantidad INT DEFAULT 1, imagen_url NVARCHAR(MAX), qr_code NVARCHAR(MAX), asignado_a NVARCHAR(300), etiquetas NVARCHAR(500), responsable NVARCHAR(300), notas NVARCHAR(MAX), fecha_registro DATETIME2 DEFAULT GETDATE(), fecha_compra DATETIME2, fecha_asignacion DATETIME2, fecha_devolucion_esperada DATETIME2)",
+                    "CREATE TABLE assignments (id INT IDENTITY(1,1) PRIMARY KEY, asset_id INT NOT NULL, user_id INT NOT NULL, area_departamento NVARCHAR(200), estado NVARCHAR(50) DEFAULT 'ACTIVO', cantidad INT DEFAULT 1, notas NVARCHAR(MAX), responsable NVARCHAR(300), fecha_asignacion DATETIME2 DEFAULT GETDATE(), fecha_devolucion_esperada DATETIME2, fecha_devolucion_real DATETIME2, FOREIGN KEY (asset_id) REFERENCES assets(id), FOREIGN KEY (user_id) REFERENCES users(id))",
+                    "CREATE TABLE notifications (id INT IDENTITY(1,1) PRIMARY KEY, user_id INT NOT NULL, titulo NVARCHAR(300) NOT NULL, mensaje NVARCHAR(MAX) NOT NULL, tipo NVARCHAR(50) NOT NULL, enlace NVARCHAR(500), icono NVARCHAR(100), leido BIT DEFAULT 0, fecha_creacion DATETIME2 DEFAULT GETDATE(), FOREIGN KEY (user_id) REFERENCES users(id))",
+                    "CREATE TABLE audit_log (id INT IDENTITY(1,1) PRIMARY KEY, user_id INT, accion NVARCHAR(100) NOT NULL, tabla NVARCHAR(100) NOT NULL, registro_id INT, valor_anterior NVARCHAR(MAX), valor_nuevo NVARCHAR(MAX), ip_address NVARCHAR(50), fecha_hora DATETIME2 DEFAULT GETDATE(), FOREIGN KEY (user_id) REFERENCES users(id))",
+                    "CREATE TABLE categorias (id INT IDENTITY(1,1) PRIMARY KEY, nombre NVARCHAR(200) UNIQUE NOT NULL, descripcion NVARCHAR(MAX), icono NVARCHAR(200), fecha_creacion DATETIME2 DEFAULT GETDATE())",
+                    "CREATE TABLE ubicaciones (id INT IDENTITY(1,1) PRIMARY KEY, nombre NVARCHAR(300) UNIQUE NOT NULL, sede NVARCHAR(200), descripcion NVARCHAR(MAX), fecha_creacion DATETIME2 DEFAULT GETDATE())",
+                    "CREATE TABLE maintenance (id INT IDENTITY(1,1) PRIMARY KEY, asset_id INT NOT NULL, type NVARCHAR(100) NOT NULL, description NVARCHAR(MAX), scheduled_date DATE NOT NULL, completed_date DATE, status NVARCHAR(50) DEFAULT 'Pendiente', technician NVARCHAR(300), notes NVARCHAR(MAX), cost FLOAT DEFAULT 0, priority NVARCHAR(50) DEFAULT 'Media', created_at DATETIME2 DEFAULT GETDATE(), updated_at DATETIME2, FOREIGN KEY (asset_id) REFERENCES assets(id))",
+                    "CREATE TABLE depreciation (id INT IDENTITY(1,1) PRIMARY KEY, asset_id INT NOT NULL UNIQUE, purchase_price FLOAT NOT NULL, residual_value FLOAT DEFAULT 0, useful_life INT NOT NULL, purchase_date DATE NOT NULL, method NVARCHAR(50) DEFAULT 'Linear', depreciation_rate FLOAT DEFAULT 0, monthly_depreciation FLOAT DEFAULT 0, accumulated_depreciation FLOAT DEFAULT 0, current_value FLOAT DEFAULT 0, last_calculated DATETIME2, FOREIGN KEY (asset_id) REFERENCES assets(id))"
+                };
+
+                for (String t : tables) {
+                    stmt.execute(t);
+                }
+                
+                System.out.println("✅ Tablas creadas. Insertando datos...");
                 insertInitialData(conn);
             }
+            
             System.out.println("✅ Conexión a SQL Server establecida correctamente");
             System.out.println("   Base de datos: hiperInventorySolutions");
         } catch (SQLException e) {
