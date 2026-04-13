@@ -49,6 +49,26 @@ public class DatabaseUtil {
      * Inicializa la base de datos — crea el esquema si no está y puebla los datos iniciales.
      */
     public static void initializeDatabase() {
+        String host     = getEnv("DB_HOST",     "sqlserver");
+        String port     = getEnv("DB_PORT",     "1433");
+        String dbName   = getEnv("DB_NAME",     "hiperInventorySolutions");
+        String user     = getEnv("DB_USER",     "sa");
+        String password = getEnv("DB_PASSWORD", "HiperApp2024!");
+
+        String masterUrl = "jdbc:sqlserver://" + host + ":" + port + ";databaseName=master;user=" + user + ";password=" + password + ";encrypt=false;trustServerCertificate=true;";
+
+        try (Connection mConn = DriverManager.getConnection(masterUrl);
+             Statement mStmt = mConn.createStatement()) {
+            
+            ResultSet rsDb = mStmt.executeQuery("SELECT name FROM sys.databases WHERE name = '" + dbName + "'");
+            if (!rsDb.next()) {
+                System.out.println("🔧 Creando base de datos " + dbName + "...");
+                mStmt.execute("CREATE DATABASE " + dbName);
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error inicializando master: " + e.getMessage());
+        }
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
